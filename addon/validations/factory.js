@@ -268,6 +268,8 @@ function createValidationsClass(inheritedValidationsClass, validations, model) {
       // Initiate attrs destroy to cleanup any remaining model references
       this.get('attrs').destroy();
 
+      this.set('model', null);
+
       // Cancel all debounced timers
       validatableAttrs.forEach((attr) => {
         let attrCache = get(debouncedValidations, attr);
@@ -376,6 +378,8 @@ function createAttrsClass(validatableAttributes, validationRules, model) {
       [attr]: createCPValidationFor(attribute, model, get(validationRules, attribute))
     });
   });
+
+  model = null;
 
   return AttrsClass;
 }
@@ -711,14 +715,13 @@ function createValidatorsFor(attribute, model) {
   }
 
   validationRules.forEach((v) => {
-    v.attribute = attribute;
-    v.model = model;
+    let copy = Object.assign({ attribute, model }, v);
 
     // If validate function exists, that means validator was created with a function so use the base class
     if (v._type === 'function') {
-      validator = BaseValidator.create(owner.ownerInjection(), v);
+      validator = BaseValidator.create(owner.ownerInjection(), copy);
     } else {
-      validator = lookupValidator(owner, v._type).create(v);
+      validator = lookupValidator(owner, v._type).create(copy);
     }
 
     validators.push(validator);
